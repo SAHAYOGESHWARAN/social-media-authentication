@@ -4,7 +4,8 @@ const { sendOTP, verifyOTP, resetPasswordRequest, resetPassword } = require('../
 const protect = require('../middleware/authMiddleware');
 const { getUserProfile } = require('../controllers/userController');
 const { body, validationResult } = require('express-validator'); // For request validation
-const rateLimit = require('express-rate-limit'); // For rate limiting
+const rateLimit = require('express-rate-limit');
+const { blacklistToken } = require('../services/tokenBlacklistService'); // Token blacklisting service
 
 const router = express.Router();
 
@@ -55,6 +56,19 @@ router.post('/login', validateLogin, authLimiter, async (req, res) => {
     return res.status(400).json({ errors: errors.array() });
   }
   await loginUser(req, res);
+});
+
+// Example logout endpoint
+router.post('/logout', protect, async (req, res) => {
+  const { token } = req.body; // Token to blacklist, should be provided by client
+  const userId = req.user._id; // Get the user ID from the request
+
+  try {
+    await blacklistToken(token, userId);
+    res.status(200).json({ message: 'Logged out successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Could not log out', error: error.message });
+  }
 });
 
 // 2FA: Send OTP
