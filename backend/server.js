@@ -17,6 +17,10 @@ app.use(morgan('combined', { stream: require('fs').createWriteStream('./logs/app
 app.use('/api/auth', authRoutes);
 app.use('/api/twilio', twilioRoutes);
 
+// Your routes here
+app.use('/api/users', userRoutes);
+app.use('/api/auth', authRoutes);
+
 // Error handling middleware
 app.use(notFound);
 app.use(errorHandler);
