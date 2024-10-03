@@ -45,6 +45,7 @@ const OTPVerification = () => {
           <button type="submit">Send OTP</button>
         </form>
       ) : (
+        
         <form onSubmit={verifyOTP}>
           <input
             type="text"
