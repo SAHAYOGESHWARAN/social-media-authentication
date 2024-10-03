@@ -72,3 +72,65 @@ exports.resetPassword = async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 };
+
+// Send OTP for phone verification
+exports.sendVerificationOTP = async (req, res) => {
+    const { phoneNumber } = req.body;
+  
+    try {
+      const user = await User.findOne({ phoneNumber });
+      if (!user) return res.status(400).json({ message: 'User not found' });
+  
+      // Generate OTP
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  
+      // Store OTP in the user document
+      const salt = await bcrypt.genSalt(12);
+      const hashedOTP = await bcrypt.hash(otp, salt);
+      user.verificationOTP = hashedOTP;
+      user.otpExpiry = Date.now() + 10 * 60 * 1000; // 10-minute expiry
+      await user.save();
+  
+      // Send OTP via Twilio
+      await client.messages.create({
+        body: `Your verification OTP is ${otp}`,
+        from: process.env.TWILIO_PHONE_NUMBER,
+        to: phoneNumber,
+      });
+  
+      res.status(200).json({ message: 'Verification OTP sent successfully' });
+    } catch (error) {
+      console.error('Error sending verification OTP:', error.message);
+      res.status(500).json({ error: 'Server error' });
+    }
+  };
+  
+  // Verify phone number using OTP
+  exports.verifyPhoneNumber = async (req, res) => {
+    const { phoneNumber, otp } = req.body;
+  
+    try {
+      const user = await User.findOne({ phoneNumber });
+      if (!user) return res.status(400).json({ message: 'User not found' });
+  
+      // Check if OTP is valid and not expired
+      if (!user.verificationOTP || user.otpExpiry < Date.now()) {
+        return res.status(400).json({ message: 'OTP expired or invalid' });
+      }
+  
+      const isMatch = await bcrypt.compare(otp, user.verificationOTP);
+      if (!isMatch) return res.status(400).json({ message: 'Invalid OTP' });
+  
+      // Mark the user as verified
+      user.isVerified = true;
+      user.verificationOTP = undefined;
+      user.otpExpiry = undefined;
+      await user.save();
+  
+      res.status(200).json({ message: 'Phone number verified successfully' });
+    } catch (error) {
+      console.error('Error verifying phone number:', error.message);
+      res.status(500).json({ error: 'Server error' });
+    }
+  };
+  
