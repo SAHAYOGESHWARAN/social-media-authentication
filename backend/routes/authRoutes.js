@@ -2,6 +2,8 @@ const express = require('express');
 const { registerUser, loginUser } = require('../controllers/authController');
 const { sendOTP, verifyOTP, resetPasswordRequest, resetPassword } = require('../controllers/twilioController');
 const protect = require('../middleware/authMiddleware');
+const { getUserProfile } = require('../controllers/userController');
+
 
 const router = express.Router();
 
@@ -22,5 +24,8 @@ router.post('/reset-password/request', resetPasswordRequest);
 
 // Reset password
 router.post('/reset-password', resetPassword);
+
+// Protected route example
+router.get('/profile', protect, getUserProfile);
 
 module.exports = router;
