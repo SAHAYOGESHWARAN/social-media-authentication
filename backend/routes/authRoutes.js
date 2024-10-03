@@ -1,8 +1,7 @@
 const express = require('express');
 const { registerUser, loginUser } = require('../controllers/authController');
+const { sendOTP, verifyOTP, resetPasswordRequest, resetPassword } = require('../controllers/twilioController');
 const protect = require('../middleware/authMiddleware');
-
-
 
 const router = express.Router();
 
@@ -12,11 +11,16 @@ router.post('/register', registerUser);
 // Login route
 router.post('/login', loginUser);
 
+// 2FA: Send OTP
+router.post('/2fa/send', sendOTP);
 
-// Example protected route
-router.get('/profile', protect, (req, res) => {
-    res.json({ message: 'This is a protected route' });
-  });
+// 2FA: Verify OTP
+router.post('/2fa/verify', verifyOTP);
 
-  
+// Password reset request
+router.post('/reset-password/request', resetPasswordRequest);
+
+// Reset password
+router.post('/reset-password', resetPassword);
+
 module.exports = router;
